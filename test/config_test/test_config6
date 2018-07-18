@@ -1,0 +1,12 @@
+[RemoteDB]
+client = sql
+port = 3306
+host = 127.0.0.1
+name = DB
+user = root
+password = 
+[BackupDB]
+port = 3306
+host = 127.0.0.1
+name = BackupDB
+user = root
