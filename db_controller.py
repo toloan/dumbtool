@@ -1,16 +1,29 @@
 import MySQLdb
+import psycopg2
 def connection(config):
-	try:
-		db = MySQLdb.connect(
-    		host = config['host'], 
-    		user = config['user'], 
-    		passwd = config['password'], 
-    		db = config['name'], 
-    		port = int(config['port']))
-	except:
-		return {'data': None, 'state': 'unable to run'} 
+	if config['client'] == 'mysql':
+		try:
+			db = MySQLdb.connect(
+	    		host = config['host'], 
+	    		user = config['user'], 
+	    		passwd = config['password'], 
+	    		db = config['name'], 
+	    		port = int(config['port']))
+		except:
+			return {'data': None, 'state': 'unable to run'} 
+	elif config['client'] == 'postgreSQL':
+		try:
+			db = psycopg2.connect(
+	    		host = config['host'], 
+	    		user = config['user'], 
+	    		passwd = config['password'], 
+	    		db = config['name'], 
+	    		port = int(config['port']))
+		except:
+			return {'data': None, 'state': 'unable to run'} 
 
-	return {'data': db,'state':'success'}
+	else:
+		return {'data': db,'state':'success'}
 
 def delete(connection,clause,tables_list):
 	cursor = connection.cursor()
@@ -72,10 +85,20 @@ def backup(config,clause,tables_list):
 	import time, subprocess
 	timestamp = str(int(time.time()))
 	file_name = timestamp+'_dump.sql'
-	if config['password'] != '':
-		command = 'mysqldump --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+ ' -p '+config['password']+' '+config['name']+''+' '.join(tables_list)+' --where="'+clause+'" > '+file_name
+	if config['client'] == 'mysql':
+		if config['password'] != '':
+			command = 'mysqldump --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+ ' -p '+config['password']+' '+config['name']+''+' '.join(tables_list)+' --where="'+clause+'" --skip-add-drop-table --skip-comments | sed \'s/^CREATE TABLE /CREATE TABLE IF NOT EXISTS /\' > '+file_name
+		else:
+			command = 'mysqldump --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+ ' '+config['name']+' '+' '.join(tables_list)+' --where="'+clause+'" --skip-add-drop-table --skip-comments | sed \'s/^CREATE TABLE /CREATE TABLE IF NOT EXISTS /\'> '+file_name
+	elif config['client'] == 'postgreSQL':
+		if config['password'] != '':
+			command = 'pg_dump -h '+ config['host']+' --port '+config['port'] +' --user '+config['user']+' --password '+config['password']+' -d '+config['name']+ '-t '+''.join(tables_list)+' -w="'+clause+'" | sed \'s/^CREATE TABLE /CREATE TABLE IF NOT EXISTS /\' > '+file_name
+
+		else:
+			command = 'pg_dump -h '+ config['host']+' --port '+config['port'] +' --user '+config['user']+' -d '+config['name']+ '-t '+''.join(tables_list)+ ' -w="'+clause+'" | sed \'s/^CREATE TABLE /CREATE TABLE IF NOT EXISTS /\' > '+file_name 
+
 	else:
-		command = 'mysqldump --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+ ' '+config['name']+' '+' '.join(tables_list)+' --where="'+clause+'" > '+file_name
+		return {'data':None,'state':'wrong config','command':command}
 	try: 
 		p = subprocess.Popen(command,shell=True)
 		p.communicate()
@@ -88,11 +111,17 @@ def backup(config,clause,tables_list):
 
 def load(config,file_name):
 	import time, subprocess
-	try: 
+	if config['client'] == 'mysql':
 		if config['password'] != '':
 			command = 'mysql --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+ ' -p '+config['password']+' --database '+config['name']+' < '+file_name
 		else:
 			command = 'mysql --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+' --database '+config['name']+' < '+file_name
+	elif config['client'] == 'postgreSQL':
+		if config['password'] != '':
+			command = 'psql --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+ ' --password '+config['password']+' -d '+config['name']+' < '+file_name
+		else:
+			command = 'psql --host '+ config['host'] +' --port '+config['port'] + ' -u '+ config['user']+' -d '+config['name']+' < '+file_name
+	try: 
 		p = subprocess.Popen(command,shell = True)
 		p.communicate()
 		if(p.returncode != 0):
@@ -100,25 +129,3 @@ def load(config,file_name):
 		return {'data':file_name,'state':'success'}
 	except:
 		return{'data':None,'state':'unable to load file'}
-
-# def get_all(connection):
-# 	cursor = connection.cursor()
-# 	rowcount = 0
-# 	state ="success"
-# 	tables_list = get_all_table(connection)
-# 	for table in tables_list:
-# 		query = "SELECT * from "+table
-# 		try:
-# 			cursor.execute(query)
-# 			rows = cursor.fetchall()
-# 			rowcount = rowcount + len(rows)
-# 			connection.commit()
-# 		except:
-# 			state = "bug"
-# 			db.rollback()
-# 	return {"data": rowcount,'state': state}
-
-# config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'BackupDB'}
-# tables = ['data']
-# clause = "updated_date <= '2018-02-02'"
-# print(backup(config,clause,tables)['command'])

@@ -5,7 +5,7 @@ import backup_controller, db_controller
 class TestIOController(unittest.TestCase):
 	def test_delete(self):
 		# true, no table list
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
 		clause = "updated_date <= '2017-12-20'"
 		connection = db_controller.connection(config)['data']
 		deleted = sum(db_controller.get(connection,clause,db_controller.get_all_table(connection)).values())
@@ -21,7 +21,7 @@ class TestIOController(unittest.TestCase):
 
 
 		# true, table list exist
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
 		clause = "updated_date <= '2018-01-01'"
 		tables = 'data'
 		tb = tables.split(",")
@@ -39,7 +39,7 @@ class TestIOController(unittest.TestCase):
 		self.assertEqual(result['state'],expected_mes)
 
 		# tablelist with one wrong one
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
 		clause = "updated_date <= '2018-01-03'"
 		tables = 'data,beta'
 		tb = tables.split(",")
@@ -56,7 +56,7 @@ class TestIOController(unittest.TestCase):
 		self.assertEqual(result['state'],expected_mes)
 
 		# not existed table list
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
 		clause = "updated_date <= '2018-02-01'"
 		tables = 'theta,beta'
 		tb = tables.split(",")
@@ -76,8 +76,8 @@ class TestIOController(unittest.TestCase):
 
 	def test_delete_backup(self):
 		# true, no table list
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
-		backup_config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'BackupDB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		backup_config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'BackupDB'}
 		clause = "updated_date <= '2018-02-01'"
 		connection = db_controller.connection(config)['data']
 		deleted = sum(db_controller.get(connection,clause,db_controller.get_all_table(connection)).values())
@@ -91,8 +91,8 @@ class TestIOController(unittest.TestCase):
 		self.assertEqual(result['data'],expected_data)
 		self.assertEqual(result['state'],expected_mes)
 		# true, table list exist
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
-		backup_config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'BackupDB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		backup_config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'BackupDB'}
 		clause = "updated_date <= '2018-02-02'"
 		tables = 'data'
 		tb = tables.split(",")
@@ -108,8 +108,8 @@ class TestIOController(unittest.TestCase):
 		self.assertEqual(result['data'],expected_data)
 		self.assertEqual(result['state'],expected_mes)
 		# no such table)
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
-		backup_config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'BackupDB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		backup_config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'BackupDB'}
 		clause = "updated_date <= '2018-03-03'"
 		tables = 'theta,beta'
 		result = backup_controller.delete_backup(config,backup_config,clause,tables)
@@ -117,8 +117,8 @@ class TestIOController(unittest.TestCase):
 		self.assertIsNone(result['data'])
 		self.assertEqual(result['state'],expected_mes) 
 		# no backup config:
-		config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
-		backup_config = {'host':'127.0.0.1','port':'3306','user':'root','password':'','name':'XSackupDB'}
+		config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'DB'}
+		backup_config = {'client':'mysql','host':'127.0.0.1','port':'3306','user':'root','password':'','name':'XSackupDB'}
 		clause = "updated_date <= '2018-04-04'"
 		tables = 'theta,beta'
 		result = backup_controller.delete_backup(config,backup_config,clause,tables)
